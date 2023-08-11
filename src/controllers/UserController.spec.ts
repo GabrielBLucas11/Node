@@ -3,21 +3,32 @@ import { UserController } from "./UserController";
 import { makeMockResponse } from "../__Mocks__/mockResponse.mock";
 import { Request } from "express";
 
-describe('UserController', () => {
-    const mockUserService: Partial<UserService> = {
-        createUser: jest.fn(),
-        getAllUsers: jest.fn()
+const mockUserService = {
+    createUser: jest.fn()
+}
+
+jest.mock('../services/UserService', () => {
+    return {
+        UserService: jest.fn().mockImplementation(() => {
+            return mockUserService
+        })
     }
-    const userController = new UserController(mockUserService as UserService);
+})
+
+describe('UserController', () => {
+    
+    const userController = new UserController();
+    const mockResponse = makeMockResponse()
+
 
     it('Deve adicionar um novo usuario', () => {
         const mockRequest = {
             body: {
                 name: 'Gabriel',
-                email: "gabriel@teste.com"
+                email: "gabriel@teste.com",
+                password: 'password'
             }
         } as Request;
-        const mockResponse = makeMockResponse()
         userController.createUser(mockRequest, mockResponse)
         expect(mockResponse.state.status).toBe(201)
         expect(mockResponse.state.json).toMatchObject({ message: "User created" })
@@ -26,39 +37,40 @@ describe('UserController', () => {
     it('Deve dar erro caso o usuário não informe o nome', () => {
         const mockRequest = {
             body: {
-                email: 'gabriel@teste.com'
+                nome: '',
+                email: 'email@teste.com',
+                password: 'password'
             }
         } as Request;
-        const mockResponse = makeMockResponse()
         userController.createUser(mockRequest, mockResponse)
         expect(mockResponse.state.status).toBe(400)
-        expect(mockResponse.state.json).toMatchObject({ message: 'Bad request: name or email invalid' })
+        expect(mockResponse.state.json).toMatchObject({ message: 'Bad request: invalid params' })
     })
     
     it('Deve dar erro caso o usuário não informe o email', () => {
         const mockRequest = {
             body: {
-                nome: 'Gabriel'
+                nome: 'Gabriel',
+                email: '',
+                password: 'password'
             }
         } as Request;
-        const mockResponse = makeMockResponse()
         userController.createUser(mockRequest, mockResponse)
         expect(mockResponse.state.status).toBe(400)
-        expect(mockResponse.state.json).toMatchObject({ message: 'Bad request: name or email invalid' })
+        expect(mockResponse.state.json).toMatchObject({ message: 'Bad request: invalid params' })
     })
 
-    it('Deve chamar a função GetAllUsers', () => {
+    it('Deve dar erro caso o usuário não informe o password', () => {
         const mockRequest = {
             body: {
                 name: 'Gabriel',
-                email: "gabriel@teste.com"
+                email: "gabriel@teste.com",
+                password: ''
             }
         } as Request;
-        const mockResponse = makeMockResponse()
-        userController.getAllUsers(mockRequest, mockResponse)
-        expect(mockUserService.getAllUsers).toBeCalled()
-        expect(mockResponse.state.status).toBe(200)
-        
+        userController.createUser(mockRequest, mockResponse)
+        expect(mockResponse.state.status).toBe(400)
+        expect(mockResponse.state.json).toMatchObject({ message: 'Bad request: invalid params' })
     })
 
     it("Deve deletar um usuário", () => {
@@ -66,9 +78,9 @@ describe('UserController', () => {
         body: {
           name: "Gabriel",
           email: "gabriel@teste.com",
+          password: 'password'
         },
       } as Request;
-      const mockResponse = makeMockResponse();
       userController.deleteUser(mockRequest, mockResponse);
       expect(mockResponse.state.status).toBe(200);
       expect(mockResponse.state.json).toMatchObject({ message: "User deleted" });
