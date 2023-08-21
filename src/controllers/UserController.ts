@@ -1,4 +1,4 @@
-import { Request, Response } from "express"
+import { Request, Response, request } from "express"
 import { UserService } from "../services/UserService";
 
 export class UserController {
@@ -19,8 +19,14 @@ export class UserController {
     return res.status(201).json({ message: "User created" });
   };
 
-  getUser = (req: Request, res: Response) => {
-    return res.status(200)
+  getUser = async (req: Request, res: Response) => {
+    const { userId } = req.params
+    const user = await this.userService.getUser(userId)
+    return res.status(200).json({
+      userId: user?.id_user,
+      name: user?.name,
+      email: user?.email,
+    })
   }
 
   deleteUser = (req: Request, res: Response) => {
